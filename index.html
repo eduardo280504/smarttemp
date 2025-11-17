@@ -9,12 +9,16 @@
     :root {
       --black: #020305;
       --cyan: #269199;
-      --pink: #EC225E;
-      --gray: #D2D2D2;
       --cyan-soft: #85AFB8;
+      --gray: #D2D2D2;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
 
     body {
       background: var(--black);
@@ -38,22 +42,29 @@
       margin-bottom: 40px;
     }
 
-    .field {
+    .login-container {
       width: 280px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
+      margin-bottom: 20px;
     }
 
     input {
       background: var(--gray);
       border: none;
-      padding: 12px;
+      padding: 10px 12px;
       border-radius: 6px;
+      font-size: 0.9rem;
+      color: #111;
+    }
+
+    input::placeholder {
+      color: #555;
+      font-size: 0.8rem;
     }
 
     button {
-      margin-top: 10px;
       background: var(--cyan);
       border: none;
       padding: 12px;
@@ -61,40 +72,127 @@
       color: white;
       font-weight: bold;
       cursor: pointer;
+      font-size: 0.9rem;
+      margin-top: 10px;
     }
 
     .register-text {
-      margin-top: 15px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      color: var(--cyan-soft);
       text-align: center;
+      margin-top: 10px;
     }
 
     .register-text span {
       color: var(--cyan);
+      cursor: pointer;
       font-weight: bold;
+    }
+
+    .error-message {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #ff6b6b;
+      text-align: center;
+      min-height: 18px;
     }
   </style>
 </head>
-
 <body>
   <div class="app-title">Smart</div>
   <div class="subtitle">Temp&Humidity</div>
 
-  <div class="field">
-    <input type="text" placeholder="Usuário / e-mail" />
-    <input type="password" placeholder="Senha" />
+  <div class="login-container">
+    <input
+      id="emailOrUser"
+      type="text"
+      placeholder="Usuário ou e-mail"
+    />
+    <input
+      id="password"
+      type="password"
+      placeholder="Senha"
+    />
 
-    <button onclick="window.location.href='home.html'">
-      ENTRAR
+    <button onclick="login()">
+      Entrar
     </button>
 
-    <div class="register-text">
-  Não tem uma conta?
-  <span onclick="window.location.href='cadastro.html'" style="cursor:pointer;">
-    Cadastre-se
-  </span>
-</div>
+    <div class="error-message" id="loginError"></div>
 
+    <div class="register-text">
+      Não tem uma conta?
+      <span onclick="window.location.href='cadastro.html'">Cadastre-se</span>
+    </div>
   </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Mesmo config do home.html
+    const firebaseConfig = {
+      apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
+      authDomain: "smart-temphumidity.firebaseapp.com",
+      databaseURL: "https://smart-temphumidity-default-rtdb.firebaseio.com",
+      projectId: "smart-temphumidity",
+      storageBucket: "smart-temphumidity.firebasestorage.app",
+      messagingSenderId: "635995652562",
+      appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
+      measurementId: "G-8VBRPX7X18"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const emailOrUserInput = document.getElementById("emailOrUser");
+    const passwordInput   = document.getElementById("password");
+    const loginError      = document.getElementById("loginError");
+
+    async function login() {
+      loginError.textContent = "";
+
+      const userOrEmail = emailOrUserInput.value.trim();
+      const password    = passwordInput.value;
+
+      if (!userOrEmail || !password) {
+        loginError.textContent = "Preencha usuário/e-mail e senha.";
+        return;
+      }
+
+      try {
+        let emailToUse = userOrEmail;
+
+        // Se não tiver "@", tratamos como username
+        if (!userOrEmail.includes("@")) {
+          const snapshot = await db.ref("usernames/" + userOrEmail).once("value");
+          if (!snapshot.exists()) {
+            loginError.textContent = "Usuário não encontrado.";
+            return;
+          }
+          const data = snapshot.val();
+          emailToUse = data.email;
+        }
+
+        await auth.signInWithEmailAndPassword(emailToUse, password);
+        // Login ok → vai para a Home
+        window.location.href = "home.html";
+      } catch (error) {
+        console.error(error);
+        let msg = "Erro ao entrar. Verifique seus dados.";
+        if (error.code === "auth/wrong-password") {
+          msg = "Senha incorreta.";
+        } else if (error.code === "auth/user-not-found") {
+          msg = "Usuário ou e-mail não encontrado.";
+        } else if (error.code === "auth/too-many-requests") {
+          msg = "Muitas tentativas. Tente novamente em alguns minutos.";
+        }
+        loginError.textContent = msg;
+      }
+    }
+  </script>
 </body>
 </html>
