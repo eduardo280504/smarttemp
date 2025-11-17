@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Erro - Smart Temp&Humidity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --black: #020305;
+      --pink: #EC225E;
+      --cyan: #269199;
+      --cyan-soft: #85AFB8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato; }
+
+    body {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 40px;
+      color: white;
+    }
+
+    .app-title {
+      font-size: 2rem;
+      color: var(--cyan);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: var(--cyan-soft);
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .circle-error {
+      width: 200px;
+      height: 200px;
+      border: 3px solid var(--pink);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--pink);
+      font-size: 1.2rem;
+      font-weight: bold;
+      line-height: 1.4;
+      margin-bottom: 60px;
+    }
+
+    .info {
+      color: var(--cyan-soft);
+      text-align: center;
+      font-size: 0.9rem;
+      margin-bottom: 60px;
+    }
+
+    .info span {
+      color: var(--cyan);
+    }
+
+    button {
+      background: var(--cyan);
+      border: none;
+      padding: 12px 60px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-title">Smart</div>
+  <div class="subtitle">Temp&Humidity</div>
+
+  <div class="circle-error">
+    Erro ao buscar<br>dados do<br>dispositivo
+  </div>
+
+  <div class="info">
+    Entre em contato através do e-mail:<br>
+    <span>smart.temphumidity@gmail.com</span>
+  </div>
+
+  <button onclick="window.location.href='index.html'">
+    Log-out
+  </button>
+</body>
+</html>
