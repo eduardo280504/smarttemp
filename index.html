@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - Smart Temp&Humidity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --black: #020305;
+      --cyan: #269199;
+      --pink: #EC225E;
+      --gray: #D2D2D2;
+      --cyan-soft: #85AFB8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato; }
+
+    body {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 40px;
+      color: white;
+    }
+
+    .app-title {
+      font-size: 2rem;
+      color: var(--cyan);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: var(--cyan-soft);
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .field {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    input {
+      background: var(--gray);
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    button {
+      margin-top: 10px;
+      background: var(--cyan);
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .register-text {
+      margin-top: 15px;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .register-text span {
+      color: var(--cyan);
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-title">Smart</div>
+  <div class="subtitle">Temp&Humidity</div>
+
+  <div class="field">
+    <input type="text" placeholder="Usuário / e-mail" />
+    <input type="password" placeholder="Senha" />
+
+    <button onclick="window.location.href='home.html'">
+      ENTRAR
+    </button>
+
+    <div class="register-text">
+  Não tem uma conta?
+  <span onclick="window.location.href='cadastro.html'" style="cursor:pointer;">
+    Cadastre-se
+  </span>
+</div>
+
+  </div>
+</body>
+</html>
