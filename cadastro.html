@@ -217,7 +217,7 @@
         // /users/{uid}
         await db.ref("users/" + uid).set(userData);
 
-        // /usernames/{username} → mapeia username para uid/email (para login)
+        // mapeia username para uid/email (para login)
         await db.ref("usernames/" + username).set({
           uid,
           email
