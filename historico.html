@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Histórico - Smart Temp&Humidity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --black: #020305;
+      --cyan: #269199;
+      --cyan-soft: #85AFB8;
+      --gray: #D2D2D2;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 40px;
+      color: white;
+    }
+
+    .app-title {
+      font-size: 2rem;
+      color: var(--cyan);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: var(--cyan-soft);
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: var(--cyan);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--cyan-soft);
+      color: var(--cyan-soft);
+    }
+
+    .history-container {
+      width: 90%;
+      max-width: 380px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .history-card {
+      border-radius: 8px;
+      border: 1px solid var(--cyan-soft);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--cyan-soft);
+    }
+
+    .history-values {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: var(--cyan);
+    }
+
+    .empty-message {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: var(--cyan-soft);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-title">Smart</div>
+  <div class="subtitle">Histórico de Leituras</div>
+
+  <div class="buttons">
+    <button onclick="window.location.href='home.html'">Voltar</button>
+    <button class="btn-secondary" onclick="window.location.href='index.html'">Log-out</button>
+  </div>
+
+  <div class="history-container" id="historyContainer"></div>
+  <div class="empty-message" id="emptyMessage">
+    Carregando histórico...
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Mesmo config dos outros arquivos
+    const firebaseConfig = {
+      apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
+      authDomain: "smart-temphumidity.firebaseapp.com",
+      databaseURL: "https://smart-temphumidity-default-rtdb.firebaseio.com",
+      projectId: "smart-temphumidity",
+      storageBucket: "smart-temphumidity.firebasestorage.app",
+      messagingSenderId: "635995652562",
+      appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
+      measurementId: "G-8VBRPX7X18"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const historyContainer = document.getElementById("historyContainer");
+    const emptyMessage     = document.getElementById("emptyMessage");
+
+    // Lê as últimas 50 leituras em /history
+    const historyRef = db.ref("history").limitToLast(50);
+
+    historyRef.on("value", (snapshot) => {
+      historyContainer.innerHTML = "";
+
+      if (!snapshot.exists()) {
+        emptyMessage.textContent = "Nenhum histórico disponível ainda.";
+        return;
+      }
+
+      const items = [];
+      snapshot.forEach((child) => {
+        const v = child.val();
+        items.push(v);
+      });
+
+      // Ordena do mais recente pro mais antigo (timestamp decrescente)
+      items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+      items.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "history-card";
+
+        const date = item.timestamp
+          ? new Date(item.timestamp)
+          : null;
+
+        const dateStr = date
+          ? date.toLocaleDateString("pt-BR")
+          : "--/--/----";
+
+        const timeStr = date
+          ? date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+          : "--:--";
+
+        card.innerHTML = `
+          <div class="history-header">
+            <span>${dateStr}</span>
+            <span>${timeStr}</span>
+          </div>
+          <div class="history-values">
+            <span>Temp: ${item.temperature?.toFixed ? item.temperature.toFixed(1) : item.temperature} °C</span>
+            <span>Umid: ${item.humidity?.toFixed ? item.humidity.toFixed(0) : item.humidity}%</span>
+          </div>
+        `;
+
+        historyContainer.appendChild(card);
+      });
+
+      emptyMessage.textContent = "";
+    }, (error) => {
+      console.error(error);
+      emptyMessage.textContent = "Erro ao carregar histórico.";
+    });
+  </script>
+</body>
+</html>
