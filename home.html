@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Início - Smart Temp&Humidity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --black: #020305;
+      --cyan: #269199;
+      --cyan-soft: #85AFB8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+    body {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 40px;
+      color: white;
+    }
+
+    .app-title {
+      font-size: 2rem;
+      color: var(--cyan);
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      color: var(--cyan-soft);
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .circle {
+      width: 200px;
+      height: 200px;
+      border: 3px solid var(--cyan);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--cyan-soft);
+      font-size: 2rem;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 40px;
+    }
+
+    .status {
+      font-size: 0.9rem;
+      color: var(--cyan-soft);
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    button {
+      background: var(--cyan);
+      border: none;
+      padding: 12px 60px;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .small-note {
+      font-size: 0.75rem;
+      color: var(--cyan-soft);
+      margin-top: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-title">Smart</div>
+  <div class="subtitle">Temp&Humidity</div>
+
+  <div class="circle">
+    <span id="tempHumText">-- °C<br>--%</span>
+  </div>
+
+  <div class="status" id="statusText">
+    Aguardando dados do dispositivo...
+  </div>
+
+  <button onclick="window.location.href='index.html'">
+    Log-out
+  </button>
+
+  <div class="small-note">
+    Dados em tempo quase real via Firebase Realtime Database.
+  </div>
+
+  <!-- SDKs Firebase (compat, mais simples pra HTML puro) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
+  authDomain: "smart-temphumidity.firebaseapp.com",
+  databaseURL: "https://smart-temphumidity-default-rtdb.firebaseio.com",
+  projectId: "smart-temphumidity",
+  storageBucket: "smart-temphumidity.firebasestorage.app",
+  messagingSenderId: "635995652562",
+  appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
+  measurementId: "G-8VBRPX7X18"
+};
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const tempHumText = document.getElementById("tempHumText");
+    const statusText = document.getElementById("statusText");
+
+    // Escuta mudanças em /sensor
+    const sensorRef = db.ref("sensor");
+
+    sensorRef.on("value", (snapshot) => {
+      const data = snapshot.val();
+
+      if (!data) {
+        tempHumText.innerHTML = "-- °C<br>--%";
+        statusText.textContent = "Nenhum dado recebido ainda do dispositivo.";
+        return;
+      }
+
+      const temp = data.temperature;
+      const hum = data.humidity;
+
+      tempHumText.innerHTML = `${temp.toFixed(1)} °C<br>${hum.toFixed(0)}%`;
+
+      // Mensagem de status simples
+      if (temp > 28 || hum > 70) {
+        statusText.textContent = "Atenção: condições fora da faixa de conforto.";
+      } else if (temp >= 22 && temp <= 27 && hum >= 40 && hum <= 70) {
+        statusText.textContent = "Ambiente em faixa de conforto.";
+      } else {
+        statusText.textContent = "Ambiente em monitoramento.";
+      }
+    }, (error) => {
+      console.error(error);
+      statusText.textContent = "Erro ao conectar ao Firebase.";
+    });
+  </script>
+</body>
+</html>
