@@ -115,6 +115,7 @@
 
   <div class="buttons">
     <button onclick="window.location.href='home.html'">Voltar</button>
+    <button class="btn-secondary" onclick="limparHistorico()">Limpar histórico</button>
     <button class="btn-secondary" onclick="window.location.href='index.html'">Log-out</button>
   </div>
 
@@ -201,6 +202,27 @@
       console.error(error);
       emptyMessage.textContent = "Erro ao carregar histórico.";
     });
+      async function limparHistorico() {
+    if (!confirm("Tem certeza que deseja limpar TODO o histórico?")) return;
+
+    const url = firebaseConfig.databaseURL + "/history.json";
+
+    try {
+      // Apaga o conteúdo de /history
+      await fetch(url, {
+        method: "DELETE"
+      });
+
+      alert("Histórico apagado com sucesso!");
+      historyContainer.innerHTML = "";
+      emptyMessage.textContent = "Histórico vazio.";
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao limpar o histórico.");
+    }
+  }
+
   </script>
 </body>
 </html>
