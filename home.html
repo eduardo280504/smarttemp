@@ -95,7 +95,7 @@
     Histórico
   </button>
 
-  <button onclick="window.location.href='index.html'">
+  <button onclick="logout()">
     Log-out
   </button>
 
@@ -105,6 +105,7 @@
 
   <!-- SDKs Firebase (compat, mais simples pra HTML puro) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
@@ -122,10 +123,17 @@ const firebaseConfig = {
 
     // Inicializa Firebase
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
     const tempHumText = document.getElementById("tempHumText");
     const statusText = document.getElementById("statusText");
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
 
     // Escuta mudanças em /sensor
     const sensorRef = db.ref("sensor");
@@ -156,6 +164,14 @@ const firebaseConfig = {
       console.error(error);
       statusText.textContent = "Erro ao conectar ao Firebase.";
     });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error(error);
+      });
+    }
   </script>
 </body>
 </html>

@@ -89,8 +89,42 @@
     <span>smart.temphumidity@gmail.com</span>
   </div>
 
-  <button onclick="window.location.href='index.html'">
+  <button onclick="logout()">
     Log-out
   </button>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
+      authDomain: "smart-temphumidity.firebaseapp.com",
+      databaseURL: "https://smart-temphumidity-default-rtdb.firebaseio.com",
+      projectId: "smart-temphumidity",
+      storageBucket: "smart-temphumidity.firebasestorage.app",
+      messagingSenderId: "635995652562",
+      appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
+      measurementId: "G-8VBRPX7X18"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error(error);
+      });
+    }
+  </script>
 </body>
 </html>

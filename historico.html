@@ -114,9 +114,10 @@
   <div class="subtitle">Histórico de Leituras</div>
 
   <div class="buttons">
-    <button onclick="window.location.href='home.html'">Voltar</button>
+    <button onclick="window.location.href='home.html'">Home</button>
     <button class="btn-secondary" onclick="limparHistorico()">Limpar histórico</button>
-    <button class="btn-secondary" onclick="window.location.href='index.html'">Log-out</button>
+    <button onclick="window.location.href='simulador.html'" class="btn-secondary">Simulador</button>
+    <button class="btn-secondary" onclick="logout()">Log-out</button>
   </div>
 
   <div class="history-container" id="historyContainer"></div>
@@ -126,6 +127,7 @@
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
@@ -142,10 +144,17 @@
     };
 
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
     const historyContainer = document.getElementById("historyContainer");
     const emptyMessage     = document.getElementById("emptyMessage");
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
 
     // Lê as últimas 50 leituras em /history
     const historyRef = db.ref("history").limitToLast(50);
@@ -222,6 +231,14 @@
       alert("Erro ao limpar o histórico.");
     }
   }
+
+  function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      }).catch((error) => {
+        console.error(error);
+      });
+    }
 
   </script>
 </body>
