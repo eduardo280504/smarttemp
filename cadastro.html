@@ -76,6 +76,11 @@
       font-size: 0.9rem;
     }
 
+    .btn-primary:disabled {
+      opacity: 0.7;
+      cursor: default;
+    }
+
     .btn-secondary {
       margin-top: 8px;
       background: transparent;
@@ -117,13 +122,13 @@
   <div class="subtitle">Temp&Humidity</div>
 
   <div class="form-container">
-    <input id="name" type="text" placeholder="Nome completo" />
-    <input id="email" type="email" placeholder="E-mail" />
-    <input id="username" type="text" placeholder="Usuário" />
-    <input id="password" type="password" placeholder="Senha" />
-    <input id="confirmPassword" type="password" placeholder="Confirmar senha" />
+    <input id="name" type="text" placeholder="Nome completo" autocomplete="name" />
+    <input id="email" type="email" placeholder="E-mail" autocomplete="email" />
+    <input id="username" type="text" placeholder="Usuário (sem espaços)" autocomplete="off" />
+    <input id="password" type="password" placeholder="Senha" autocomplete="new-password" />
+    <input id="confirmPassword" type="password" placeholder="Confirmar senha" autocomplete="new-password" />
 
-    <button class="btn-primary" onclick="registerUser()">
+    <button id="btnRegister" class="btn-primary" onclick="registerUser()">
       Cadastrar
     </button>
 
@@ -145,7 +150,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
-    // Mesmo config do projeto
     const firebaseConfig = {
       apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
       authDomain: "smart-temphumidity.firebaseapp.com",
@@ -168,6 +172,7 @@
     const passConfInput = document.getElementById("confirmPassword");
     const regError      = document.getElementById("registerError");
     const regSuccess    = document.getElementById("registerSuccess");
+    const btnRegister   = document.getElementById("btnRegister");
 
     async function registerUser() {
       regError.textContent = "";
@@ -179,8 +184,22 @@
       const password = passInput.value;
       const confirm  = passConfInput.value;
 
+      // Validações básicas
       if (!name || !email || !username || !password || !confirm) {
         regError.textContent = "Preencha todos os campos.";
+        return;
+      }
+
+      // Usuário sem espaços
+      if (/\s/.test(username)) {
+        regError.textContent = "O usuário não pode conter espaços.";
+        return;
+      }
+
+      // Opcional: restringir caracteres no usuário
+      const usernamePattern = /^[a-zA-Z0-9_.-]+$/;
+      if (!usernamePattern.test(username)) {
+        regError.textContent = "Use apenas letras, números, ponto, traço ou sublinhado no usuário.";
         return;
       }
 
@@ -194,11 +213,18 @@
         return;
       }
 
+      // Desabilita botão enquanto cadastra
+      btnRegister.disabled = true;
+      const originalText = btnRegister.textContent;
+      btnRegister.textContent = "Cadastrando...";
+
       try {
         // Verifica se username já existe
         const usernameSnap = await db.ref("usernames/" + username).once("value");
         if (usernameSnap.exists()) {
           regError.textContent = "Este usuário já está em uso. Escolha outro.";
+          btnRegister.disabled = false;
+          btnRegister.textContent = originalText;
           return;
         }
 
@@ -206,7 +232,6 @@
         const cred = await auth.createUserWithEmailAndPassword(email, password);
         const uid  = cred.user.uid;
 
-        // Salva dados complementares
         const userData = {
           name,
           email,
@@ -214,10 +239,10 @@
           createdAt: Date.now()
         };
 
-        // /users/{uid}
+        // Salva dados complementares
         await db.ref("users/" + uid).set(userData);
 
-        // mapeia username para uid/email (para login)
+        // Mapeia username -> uid / email
         await db.ref("usernames/" + username).set({
           uid,
           email
@@ -225,8 +250,9 @@
 
         regSuccess.textContent = "Cadastro realizado com sucesso! Redirecionando...";
         regError.textContent = "";
+        btnRegister.textContent = "Cadastrado";
+        // mantém desabilitado até redirecionar
 
-        // Redireciona para a tela de login depois de 2 segundos
         setTimeout(() => {
           window.location.href = "index.html";
         }, 2000);
@@ -234,6 +260,7 @@
       } catch (error) {
         console.error(error);
         let msg = "Erro ao cadastrar. Tente novamente.";
+
         if (error.code === "auth/email-already-in-use") {
           msg = "Este e-mail já está em uso.";
         } else if (error.code === "auth/invalid-email") {
@@ -241,7 +268,10 @@
         } else if (error.code === "auth/weak-password") {
           msg = "Senha fraca. Use 6 caracteres ou mais.";
         }
+
         regError.textContent = msg;
+        btnRegister.disabled = false;
+        btnRegister.textContent = originalText;
       }
     }
   </script>
