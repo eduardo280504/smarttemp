@@ -25,9 +25,9 @@
     }
 
     .app-title { font-size: 2rem; color: var(--cyan); text-align: center; }
-    .subtitle { color: var(--cyan-soft); text-align: center; margin-bottom: 30px; }
+    .subtitle  { color: var(--cyan-soft); text-align: center; margin-bottom: 30px; }
 
-    .buttons { display: flex; gap: 10px; margin-bottom: 20px; }
+    .buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 
     button {
       background: var(--cyan);
@@ -130,7 +130,8 @@
       if (!user) window.location.href = "index.html";
     });
 
-    const historyRef = db.ref("history").limitToLast(50);
+    // Lê as últimas 50 leituras ordenadas pela chave (timestamp)
+    const historyRef = db.ref("history").orderByKey().limitToLast(50);
 
     historyRef.on("value", (snapshot) => {
       historyContainer.innerHTML = "";
@@ -141,8 +142,19 @@
       }
 
       const items = [];
-      snapshot.forEach((child) => items.push(child.val()));
+      snapshot.forEach((child) => {
+        // guardo a chave também só pra debug se quiser
+        items.push({
+          key: child.key,
+          ...child.val()
+        });
+      });
 
+      // debug no console
+      console.log("Total de leituras carregadas:", items.length);
+      console.log(items);
+
+      // Ordena do mais recente pro mais antigo pelo timestamp
       items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
       items.forEach((item) => {
@@ -164,14 +176,22 @@
             })
           : "--:--";
 
+        const tempText = (typeof item.temperature === "number")
+          ? item.temperature.toFixed(1)
+          : item.temperature;
+
+        const humText = (typeof item.humidity === "number")
+          ? item.humidity.toFixed(0)
+          : item.humidity;
+
         card.innerHTML = `
           <div class="history-header">
             <span>${dateStr}</span>
             <span>${timeStr}</span>
           </div>
           <div class="history-values">
-            <span>Temp: ${item.temperature?.toFixed ? item.temperature.toFixed(1) : item.temperature} °C</span>
-            <span>Umid: ${item.humidity?.toFixed ? item.humidity.toFixed(0) : item.humidity}%</span>
+            <span>Temp: ${tempText} °C</span>
+            <span>Umid: ${humText}%</span>
           </div>
         `;
 
@@ -179,13 +199,15 @@
       });
 
       emptyMessage.textContent = "";
+    }, (error) => {
+      console.error(error);
+      emptyMessage.textContent = "Erro ao carregar histórico.";
     });
 
     async function limparHistorico() {
       if (!confirm("Tem certeza que deseja apagar TODO o histórico?")) return;
 
       const url = firebaseConfig.databaseURL + "/history.json";
-
       await fetch(url, { method: "DELETE" });
 
       historyContainer.innerHTML = "";
