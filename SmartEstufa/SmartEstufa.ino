@@ -4,12 +4,12 @@
 #include <time.h>   // Para NTP (hora da internet)
 
 // ====== CONFIGURAÇÃO WI-FI ======
-const char* ssid     = "Eduardo";
-const char* password = "eduardo30";
+const char* ssid     = "VIVOFIBRA-1731";
+const char* password = "Etq8xHMTYZ";
 
 // ====== CONFIGURAÇÃO DHT ======
 #define DHTPIN 27
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22     // <<< SENSOR ATUAL
 DHT dht(DHTPIN, DHTTYPE);
 
 // ====== CONFIGURAÇÃO FIREBASE ======
@@ -17,15 +17,15 @@ const char* firebaseHost = "https://smart-temphumidity-default-rtdb.firebaseio.c
 
 // ====== CONFIGURAÇÃO NTP ======
 const char* ntpServer = "pool.ntp.org";
-// salvando em UTC, o navegador ajusta pro fuso
-const long gmtOffset_sec     = 0;
+// Salva em UTC, front converte para fuso correto
+const long gmtOffset_sec      = 0;
 const int  daylightOffset_sec = 0;
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  Serial.println("\nIniciando DHT...");
+  Serial.println("\nIniciando DHT22...");
   dht.begin();
 
   Serial.println("Conectando ao Wi-Fi...");
@@ -42,7 +42,7 @@ void setup() {
 
   // ---- CONFIGURA HORA VIA NTP ----
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  Serial.println("Sincronizando hora com NTP...");
+  Serial.println("Sincronizando hora NTP...");
 
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
@@ -54,74 +54,70 @@ void setup() {
 }
 
 void loop() {
-  // ---- Lê DHT ----
+
+  // ---- Lê DHT22 ----
   float h = dht.readHumidity();
   float t = dht.readTemperature();
 
   if (isnan(h) || isnan(t)) {
-    Serial.println("Falha ao ler DHT11!");
-    delay(5000);
+    Serial.println("Falha ao ler DHT22!");
+    delay(60000);
     return;
   }
 
-  Serial.printf("Temp: %.2f°C | Umidade: %.2f%%\n", t, h);
+  Serial.printf("Temperatura: %.2f°C | Umidade: %.2f%%\n", t, h);
 
   if (WiFi.status() == WL_CONNECTED) {
 
-    // ---- Timestamp real da internet (segundos desde 1970) ----
+    // ---- Timestamp real ----
     time_t now;
-    time(&now);  
-    long ts = (long)now;
+    time(&now);
+    long ts = (long)now;  // segundos
 
-    // ---- JSON ----
+    // ---- Monta JSON ----
     String json = "{";
     json += "\"temperature\":" + String(t, 2) + ",";
-    json += "\"humidity\":" + String(h, 2) + ",";
-    json += "\"timestamp\":" + String(ts);
+    json += "\"humidity\":"   + String(h, 2) + ",";
+    json += "\"timestamp\":"  + String(ts);
     json += "}";
 
     HTTPClient http;
 
-    // ===== 1) Atualiza /sensor (última leitura) =====
+    // ================================
+    // 1) ATUALIZA /sensor (PUT)
+    // ================================
     {
-      String urlLast = String(firebaseHost) + "/sensor.json";
-      http.begin(urlLast);
+      String url = String(firebaseHost) + "/sensor.json";
+      http.begin(url);
       http.addHeader("Content-Type", "application/json");
 
-      int codeLast = http.PUT(json);
+      int code = http.PUT(json);
       Serial.print("[/sensor] Código HTTP: ");
-      Serial.println(codeLast);
-
-      if (codeLast <= 0) {
-        Serial.println("Erro ao enviar para /sensor");
-      }
+      Serial.println(code);
 
       http.end();
     }
 
-    // ===== 2) Salva no histórico em /history/<timestamp>.json =====
+    // =============================================
+    // 2) ADICIONA NO HISTÓRICO: /history/<timestamp>
+    // =============================================
     {
-      // chave = próprio timestamp, ex: /history/1733246500.json
-      String urlHist = String(firebaseHost) + String("/history/") + String(ts) + ".json";
-      http.begin(urlHist);
+      String url = String(firebaseHost) + "/history/" + String(ts) + ".json";
+      http.begin(url);
       http.addHeader("Content-Type", "application/json");
 
-      int codeHist = http.PUT(json);   // PUT porque agora a chave é única
+      int code = http.PUT(json);
       Serial.print("[/history] Código HTTP: ");
-      Serial.println(codeHist);
-
-      if (codeHist <= 0) {
-        Serial.println("Erro ao enviar para /history");
-      }
+      Serial.println(code);
 
       http.end();
     }
 
   } else {
-    Serial.println("Wi-Fi caiu! Tentando reconectar...");
+    Serial.println("Wi-Fi desconectado! Tentando reconectar...");
     WiFi.reconnect();
   }
 
-  // intervalo entre leituras 1 min
+  // ---- INTERVALO DE 1 MINUTO ----
   delay(60000);
 }
