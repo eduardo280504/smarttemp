@@ -17,9 +17,9 @@ const char* firebaseHost = "https://smart-temphumidity-default-rtdb.firebaseio.c
 
 // ====== CONFIGURAÇÃO NTP ======
 const char* ntpServer = "pool.ntp.org";
-// Sempre salvar em UTC – o navegador converte para o fuso local
-const long gmtOffset_sec = 0;
-const int daylightOffset_sec = 0;
+// salvando em UTC, o navegador ajusta pro fuso
+const long gmtOffset_sec     = 0;
+const int  daylightOffset_sec = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -68,7 +68,7 @@ void loop() {
 
   if (WiFi.status() == WL_CONNECTED) {
 
-    // ---- Timestamp real da internet ----
+    // ---- Timestamp real da internet (segundos desde 1970) ----
     time_t now;
     time(&now);  
     long ts = (long)now;
@@ -82,32 +82,46 @@ void loop() {
 
     HTTPClient http;
 
-    // ---- 1) Atualiza /sensor ----
-    String urlLast = String(firebaseHost) + "/sensor.json";
-    http.begin(urlLast);
-    http.addHeader("Content-Type", "application/json");
+    // ===== 1) Atualiza /sensor (última leitura) =====
+    {
+      String urlLast = String(firebaseHost) + "/sensor.json";
+      http.begin(urlLast);
+      http.addHeader("Content-Type", "application/json");
 
-    int codeLast = http.PUT(json);
-    Serial.print("[/sensor] Código HTTP: ");
-    Serial.println(codeLast);
+      int codeLast = http.PUT(json);
+      Serial.print("[/sensor] Código HTTP: ");
+      Serial.println(codeLast);
 
-    http.end();
+      if (codeLast <= 0) {
+        Serial.println("Erro ao enviar para /sensor");
+      }
 
-    // ---- 2) Adiciona em /history ----
-    String urlHist = String(firebaseHost) + "/history.json";
-    http.begin(urlHist);
-    http.addHeader("Content-Type", "application/json");
+      http.end();
+    }
 
-    int codeHist = http.POST(json);
-    Serial.print("[/history] Código HTTP: ");
-    Serial.println(codeHist);
+    // ===== 2) Salva no histórico em /history/<timestamp>.json =====
+    {
+      // chave = próprio timestamp, ex: /history/1733246500.json
+      String urlHist = String(firebaseHost) + String("/history/") + String(ts) + ".json";
+      http.begin(urlHist);
+      http.addHeader("Content-Type", "application/json");
 
-    http.end();
+      int codeHist = http.PUT(json);   // PUT porque agora a chave é única
+      Serial.print("[/history] Código HTTP: ");
+      Serial.println(codeHist);
+
+      if (codeHist <= 0) {
+        Serial.println("Erro ao enviar para /history");
+      }
+
+      http.end();
+    }
 
   } else {
     Serial.println("Wi-Fi caiu! Tentando reconectar...");
     WiFi.reconnect();
   }
 
-  delay(5000);
+  // intervalo entre leituras
+  delay(10000);
 }
