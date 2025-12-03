@@ -176,12 +176,12 @@
 
       // ---- STATUS DINÂMICO ----
       if (temp > 30 || hum > 75) {
-        statusText.textContent = "⚠️ Condições ruins! Atenção.";
+        statusText.textContent = "Condições ruins! Atenção.";
         statusText.style.color = "var(--red)";
         circleBox.style.borderColor = "var(--red)";
       }
       else if (temp >= 22 && temp <= 27 && hum >= 40 && hum <= 70) {
-        statusText.textContent = "✔️ Ambiente na faixa ideal.";
+        statusText.textContent = "Ambiente na faixa ideal.";
         statusText.style.color = "var(--green)";
         circleBox.style.borderColor = "var(--green)";
       }
