@@ -3,16 +3,15 @@
 #include "DHT.h"
 
 // ====== CONFIGURAÇÃO WI-FI ======
-const char* ssid     = "Eduardo";     // nome da rede (hotspot do teu celular)
-const char* password = "eduardo30";   // senha do hotspot
+const char* ssid     = "VIVOFIBRA-1731";     // nome da rede (hotspot do teu celular)
+const char* password = "Etq8xHMTYZ";         // senha do hotspot
 
 // ====== CONFIGURAÇÃO DHT ======
-#define DHTPIN 27      // pino de dados do DHT11 no ESP32 (GPIO27)
+#define DHTPIN 27          // pino de dados do DHT11 no ESP32 (GPIO27)
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
 // ====== CONFIGURAÇÃO FIREBASE ======
-// Troque SEU_PROJETO pelo ID do seu Realtime Database
 // Exemplo: "https://smart-temphumidity-default-rtdb.firebaseio.com"
 const char* firebaseHost = "https://smart-temphumidity-default-rtdb.firebaseio.com";
 
@@ -39,28 +38,28 @@ void setup() {
 }
 
 void loop() {
+  // Lê os dados do sensor
+  float h = dht.readHumidity();
+  float t = dht.readTemperature(); // em Celsius
+
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Falha ao ler do DHT11!");
+    delay(5000);
+    return;
+  }
+
+  Serial.print("Temp: ");
+  Serial.print(t);
+  Serial.print(" °C  |  Umidade: ");
+  Serial.print(h);
+  Serial.println(" %");
+
   if (WiFi.status() == WL_CONNECTED) {
-    float h = dht.readHumidity();
-    float t = dht.readTemperature(); // em Celsius
-
-    if (isnan(h) || isnan(t)) {
-      Serial.println("Falha ao ler do DHT11!");
-      delay(5000);
-      return;
-    }
-
-    Serial.print("Temp: ");
-    Serial.print(t);
-    Serial.print(" °C  |  Umidade: ");
-    Serial.print(h);
-    Serial.println(" %");
-
     // Monta URL: .../sensor.json
     String url = String(firebaseHost) + "/sensor.json";
 
-    // Monta JSON:
-    // { "temperature": 25.30, "humidity": 60.00, "timestamp": 1234567 }
-    unsigned long ts = millis(); // só um timestamp simples (ms desde o boot)
+    // Monta JSON
+    unsigned long ts = millis(); // timestamp simples
     String json = "{";
     json += "\"temperature\":" + String(t, 2) + ",";
     json += "\"humidity\":" + String(h, 2) + ",";
@@ -71,7 +70,6 @@ void loop() {
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
-    // PUT sobrescreve sempre o nó /sensor (última leitura)
     int httpResponseCode = http.PUT(json);
 
     if (httpResponseCode > 0) {
@@ -85,12 +83,11 @@ void loop() {
     }
 
     http.end();
-
   } else {
     Serial.println("Wi-Fi desconectado, tentando reconectar...");
     WiFi.reconnect();
   }
 
-  // RNF02 – tempo quase real → atualiza a cada 5 segundos
+  // Atualiza a cada 5 segundos
   delay(5000);
 }
