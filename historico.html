@@ -13,12 +13,7 @@
       --gray: #D2D2D2;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato; }
 
     body {
       background: var(--black);
@@ -29,24 +24,10 @@
       color: white;
     }
 
-    .app-title {
-      font-size: 2rem;
-      color: var(--cyan);
-      text-align: center;
-      line-height: 1.1;
-    }
+    .app-title { font-size: 2rem; color: var(--cyan); text-align: center; }
+    .subtitle { color: var(--cyan-soft); text-align: center; margin-bottom: 30px; }
 
-    .subtitle {
-      color: var(--cyan-soft);
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
+    .buttons { display: flex; gap: 10px; margin-bottom: 20px; }
 
     button {
       background: var(--cyan);
@@ -121,9 +102,7 @@
   </div>
 
   <div class="history-container" id="historyContainer"></div>
-  <div class="empty-message" id="emptyMessage">
-    Carregando histórico...
-  </div>
+  <div class="empty-message" id="emptyMessage">Carregando histórico...</div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -131,7 +110,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
-    // Mesmo config dos outros arquivos
     const firebaseConfig = {
       apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
       authDomain: "smart-temphumidity.firebaseapp.com",
@@ -139,24 +117,20 @@
       projectId: "smart-temphumidity",
       storageBucket: "smart-temphumidity.firebasestorage.app",
       messagingSenderId: "635995652562",
-      appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
-      measurementId: "G-8VBRPX7X18"
+      appId: "1:635995652562:web:b934856e8ea9a5f8c2080b"
     };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.database();
+    const db   = firebase.database();
 
     const historyContainer = document.getElementById("historyContainer");
     const emptyMessage     = document.getElementById("emptyMessage");
 
     auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = "index.html";
-      }
+      if (!user) window.location.href = "index.html";
     });
 
-    // Lê as últimas 50 leituras em /history
     const historyRef = db.ref("history").limitToLast(50);
 
     historyRef.on("value", (snapshot) => {
@@ -168,28 +142,27 @@
       }
 
       const items = [];
-      snapshot.forEach((child) => {
-        const v = child.val();
-        items.push(v);
-      });
+      snapshot.forEach((child) => items.push(child.val()));
 
-      // Ordena do mais recente pro mais antigo (timestamp decrescente)
       items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
       items.forEach((item) => {
         const card = document.createElement("div");
         card.className = "history-card";
 
-        const date = item.timestamp
-          ? new Date(item.timestamp)
-          : null;
+        const ts = item.timestamp;
+        const date = ts ? new Date(ts * 1000) : null;
 
         const dateStr = date
-          ? date.toLocaleDateString("pt-BR")
+          ? date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
           : "--/--/----";
 
         const timeStr = date
-          ? date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+          ? date.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "America/Sao_Paulo"
+            })
           : "--:--";
 
         card.innerHTML = `
@@ -207,39 +180,24 @@
       });
 
       emptyMessage.textContent = "";
-    }, (error) => {
-      console.error(error);
-      emptyMessage.textContent = "Erro ao carregar histórico.";
     });
-      async function limparHistorico() {
-    if (!confirm("Tem certeza que deseja limpar TODO o histórico?")) return;
 
-    const url = firebaseConfig.databaseURL + "/history.json";
+    async function limparHistorico() {
+      if (!confirm("Tem certeza que deseja apagar TODO o histórico?")) return;
 
-    try {
-      // Apaga o conteúdo de /history
-      await fetch(url, {
-        method: "DELETE"
-      });
+      const url = firebaseConfig.databaseURL + "/history.json";
 
-      alert("Histórico apagado com sucesso!");
+      await fetch(url, { method: "DELETE" });
+
       historyContainer.innerHTML = "";
-      emptyMessage.textContent = "Histórico vazio.";
-
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao limpar o histórico.");
+      emptyMessage.textContent = "Histórico apagado.";
     }
-  }
 
-  function logout() {
+    function logout() {
       auth.signOut().then(() => {
         window.location.href = "index.html";
-      }).catch((error) => {
-        console.error(error);
       });
     }
-
   </script>
 </body>
 </html>
