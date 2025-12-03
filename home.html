@@ -10,9 +10,12 @@
       --black: #020305;
       --cyan: #269199;
       --cyan-soft: #85AFB8;
+      --green: #4cd964;
+      --yellow: #e7c860;
+      --red: #ff6b6b;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Lato; }
 
     body {
       background: var(--black);
@@ -33,7 +36,7 @@
     .subtitle {
       color: var(--cyan-soft);
       text-align: center;
-      margin-bottom: 60px;
+      margin-bottom: 40px;
     }
 
     .circle {
@@ -45,15 +48,23 @@
       align-items: center;
       justify-content: center;
       color: var(--cyan-soft);
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: bold;
       text-align: center;
       line-height: 1.4;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
     }
 
     .status {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      text-align: center;
+      transition: 0.2s;
+    }
+
+    .last-update {
+      font-size: 0.75rem;
       color: var(--cyan-soft);
       margin-bottom: 40px;
       text-align: center;
@@ -68,6 +79,11 @@
       font-weight: bold;
       cursor: pointer;
       margin-bottom: 20px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #1f7d84;
     }
 
     .small-note {
@@ -83,7 +99,7 @@
   <div class="app-title">Smart</div>
   <div class="subtitle">Temp&Humidity</div>
 
-  <div class="circle">
+  <div class="circle" id="circleBox">
     <span id="tempHumText">-- °C<br>--%</span>
   </div>
 
@@ -91,51 +107,46 @@
     Aguardando dados do dispositivo...
   </div>
 
-  <button onclick="window.location.href='historico.html'">
-    Histórico
-  </button>
-
-  <button onclick="logout()">
-    Log-out
-  </button>
-
-  <div class="small-note">
-    Dados em tempo quase real via Firebase Realtime Database.
+  <div class="last-update" id="lastUpdate">
+    Última leitura: --
   </div>
 
-  <!-- SDKs Firebase (compat, mais simples pra HTML puro) -->
+  <button onclick="window.location.href='historico.html'">Histórico</button>
+  <button onclick="logout()">Log-out</button>
+
+  <div class="small-note">
+    Dados atualizados automaticamente pelo Firebase.
+  </div>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
+      authDomain: "smart-temphumidity.firebaseapp.com",
+      databaseURL: "https://smart-temphumidity-default-rtdb.firebaseio.com",
+      projectId: "smart-temphumidity",
+      storageBucket: "smart-temphumidity.firebasestorage.app",
+      messagingSenderId: "635995652562",
+      appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
+    };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAK48Jx6yis_u_bVQQZHlbZmeKaO0xZqO4",
-  authDomain: "smart-temphumidity.firebaseapp.com",
-  databaseURL: "https://smart-temphumidity-default-rtdb.firebaseio.com",
-  projectId: "smart-temphumidity",
-  storageBucket: "smart-temphumidity.firebasestorage.app",
-  messagingSenderId: "635995652562",
-  appId: "1:635995652562:web:b934856e8ea9a5f8c2080b",
-  measurementId: "G-8VBRPX7X18"
-};
-
-    // Inicializa Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const db = firebase.database();
+    const db   = firebase.database();
 
     const tempHumText = document.getElementById("tempHumText");
-    const statusText = document.getElementById("statusText");
+    const statusText  = document.getElementById("statusText");
+    const lastUpdate  = document.getElementById("lastUpdate");
+    const circleBox   = document.getElementById("circleBox");
 
     auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = "index.html";
-      }
+      if (!user) window.location.href = "index.html";
     });
 
-    // Escuta mudanças em /sensor
     const sensorRef = db.ref("sensor");
 
     sensorRef.on("value", (snapshot) => {
@@ -143,35 +154,52 @@ const firebaseConfig = {
 
       if (!data) {
         tempHumText.innerHTML = "-- °C<br>--%";
-        statusText.textContent = "Nenhum dado recebido ainda do dispositivo.";
+        statusText.textContent = "Nenhum dado recebido ainda.";
+        circleBox.style.borderColor = "var(--cyan-soft)";
         return;
       }
 
       const temp = data.temperature;
-      const hum = data.humidity;
+      const hum  = data.humidity;
+      const ts   = data.timestamp;
 
       tempHumText.innerHTML = `${temp.toFixed(1)} °C<br>${hum.toFixed(0)}%`;
 
-      // Mensagem de status simples
-      if (temp > 28 || hum > 70) {
-        statusText.textContent = "Atenção: condições fora da faixa de conforto.";
-      } else if (temp >= 22 && temp <= 27 && hum >= 40 && hum <= 70) {
-        statusText.textContent = "Ambiente em faixa de conforto.";
-      } else {
-        statusText.textContent = "Ambiente em monitoramento.";
+      // ---- HORA DA ÚLTIMA LEITURA ----
+      if (ts) {
+        const date = new Date(ts * 1000);
+        lastUpdate.textContent =
+          "Última leitura: " +
+          date.toLocaleDateString("pt-BR") + " — " +
+          date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       }
+
+      // ---- STATUS DINÂMICO ----
+      if (temp > 30 || hum > 75) {
+        statusText.textContent = "⚠️ Condições ruins! Atenção.";
+        statusText.style.color = "var(--red)";
+        circleBox.style.borderColor = "var(--red)";
+      }
+      else if (temp >= 22 && temp <= 27 && hum >= 40 && hum <= 70) {
+        statusText.textContent = "✔️ Ambiente na faixa ideal.";
+        statusText.style.color = "var(--green)";
+        circleBox.style.borderColor = "var(--green)";
+      }
+      else {
+        statusText.textContent = "Ambiente em monitoramento.";
+        statusText.style.color = "var(--yellow)";
+        circleBox.style.borderColor = "var(--yellow)";
+      }
+
     }, (error) => {
       console.error(error);
       statusText.textContent = "Erro ao conectar ao Firebase.";
     });
 
     function logout() {
-      auth.signOut().then(() => {
-        window.location.href = "index.html";
-      }).catch((error) => {
-        console.error(error);
-      });
+      auth.signOut().then(() => window.location.href = "index.html");
     }
   </script>
+
 </body>
 </html>
