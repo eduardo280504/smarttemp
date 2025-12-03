@@ -4,8 +4,8 @@
 #include <time.h>   // Para NTP (hora da internet)
 
 // ====== CONFIGURAÇÃO WI-FI ======
-const char* ssid     = "VIVOFIBRA-1731";
-const char* password = "Etq8xHMTYZ";
+const char* ssid     = "Eduardo";
+const char* password = "eduardo30";
 
 // ====== CONFIGURAÇÃO DHT ======
 #define DHTPIN 27
