@@ -177,17 +177,17 @@
       // ---- STATUS DINÂMICO ----
       if (temp > 30 || hum > 75) {
         statusText.textContent = "Condições ruins! Atenção.";
-        statusText.style.color = "var(--red)";
+        statusText.style.color = "var(cyan-soft)";
         circleBox.style.borderColor = "var(--red)";
       }
       else if (temp >= 22 && temp <= 27 && hum >= 40 && hum <= 70) {
         statusText.textContent = "Ambiente na faixa ideal.";
-        statusText.style.color = "var(--green)";
+        statusText.style.color = "var(cyan-soft)";
         circleBox.style.borderColor = "var(--green)";
       }
       else {
         statusText.textContent = "Ambiente em monitoramento.";
-        statusText.style.color = "var(--yellow)";
+        statusText.style.color = "var(cyan-soft)";
         circleBox.style.borderColor = "var(--yellow)";
       }
 
