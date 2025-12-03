@@ -122,6 +122,6 @@ void loop() {
     WiFi.reconnect();
   }
 
-  // intervalo entre leituras
-  delay(10000);
+  // intervalo entre leituras 1 min
+  delay(60000);
 }
